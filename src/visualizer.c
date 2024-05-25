@@ -49,7 +49,7 @@ static Color hsv_to_rgb(float h, float s, float v)
     float r, g, b;
 
     int i = (int)floor(h * 6);
-    float f = h * 6 - i;
+    float f = h * 6.0f - (float)i;
     float p = v * (1 - s);
     float q = v * (1 - f * s);
     float t = v * (1 - (1 - f) * s);
@@ -100,7 +100,7 @@ void visualizer_draw(Visualizer *visualizer)
         for (SortType i = 0; i < visualizer->count; i++)
         {
             float barHeight = barUnitHeight * visualizer->values[i];
-            DrawRectangle((int)(i * barWidth), (int)(screenHeight - barHeight), (int)barWidth, (int)(barHeight), GRAY);
+            DrawRectangle((int)(i * barWidth), (int)((float)screenHeight - barHeight), (int)barWidth, (int)(barHeight), GRAY);
         }
         break;
     }
@@ -110,15 +110,15 @@ void visualizer_draw(Visualizer *visualizer)
         for (SortType i = 0; i < visualizer->count; i++)
         {
             float barWidth = barUnitWidth * visualizer->values[i];
-            DrawRectangle((int)(screenWidth - barWidth) / 2, (int)(barHeight * i), (int)barWidth, (int)barHeight, GRAY);
+            DrawRectangle((int)((float)screenWidth - barWidth) / 2, (int)(barHeight * i), (int)barWidth, (int)barHeight, GRAY);
         }
         break;
     }
     case Circle: {
         float theta = 360.0f / visualizer->count;
         // Define the center of the circle
-        Vector2 center = {screenWidth / 2.0f, screenHeight / 2.0f};
-        float radius = screenHeight / 2.0f;
+        Vector2 center = {(float)screenWidth / 2.0f, (float)screenHeight / 2.0f};
+        float radius = (float)screenHeight / 2.0f;
         for (SortType i = 0; i < visualizer->count; i++)
         {
             // Calculate the start and end angles of the current segment

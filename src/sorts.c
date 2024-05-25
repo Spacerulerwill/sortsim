@@ -3,14 +3,21 @@
 #include <stdatomic.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <threads.h>
+#if defined(_WIN32)
+#include <windows.h>
+#elif defined (__unix__)
+#include <time.h>
+#include <errno.h>
+#endif
 
 #define DELAY_MICROSECONDS 50
 
-#if defined(_WIN32)
-#include <windows.h>
-static void sleep_microseconds(long long microseconds)
+static void sleep_microseconds(uint64_t microseconds)
 {
+    #if defined(_WIN32)
+    // Ugly busy waiting for microsecond precision sleep
     LARGE_INTEGER frequency;
     QueryPerformanceFrequency(&frequency);
 
@@ -23,8 +30,11 @@ static void sleep_microseconds(long long microseconds)
         QueryPerformanceCounter(&end);
         elapsedMicroseconds = (end.QuadPart - start.QuadPart) * 1000000LL / frequency.QuadPart;
     }
+    #elif defined(__unix__)
+    struct timespec ts = {0, (long int)microseconds * 1000L};
+    nanosleep(&ts, NULL);
+    #endif
 }
-#endif // __WIN32__
 
 bool is_already_sorted(SortType *values, SortType count, SortStats *sortStats)
 {
@@ -51,7 +61,7 @@ void shuffle(SortType *values, SortType count, SortStats *stats)
         size_t i;
         for (i = 0; i < n - 1; i++)
         {
-            size_t j = i + rand() / (RAND_MAX / (n - i) + 1);
+            size_t j = i + (size_t)rand() / (RAND_MAX / (n - i) + 1);
             SortType t = values[j];
             values[j] = values[i];
             values[i] = t;
