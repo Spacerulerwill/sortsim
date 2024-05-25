@@ -97,36 +97,53 @@ void visualizer_draw(Visualizer *visualizer)
     case Bars: {
         float barWidth = (float)screenWidth / visualizer->count;
         float barUnitHeight = (float)screenHeight / visualizer->count;
+
         for (SortType i = 0; i < visualizer->count; i++)
         {
             float barHeight = barUnitHeight * visualizer->values[i];
-            DrawRectangle((int)(i * barWidth), (int)((float)screenHeight - barHeight), (int)barWidth, (int)(barHeight), GRAY);
+            int x = (int)(i * barWidth);
+            int y = screenHeight - (int)barHeight;
+            int width = (int)barWidth;
+            int height = (int)barHeight;
+            if (width < 1) width = 1;
+            if (height < 1) height = 1;
+            DrawRectangle(x, y, width, height, RAYWHITE);
+            if (barWidth > 4.0f)
+            {
+                DrawRectangleLines(x, y, width, height, BLACK);
+            }
         }
         break;
     }
     case Pyramid: {
-        float barUnitWidth = ((float)screenWidth / visualizer->count);
+        float barUnitWidth = (float)screenWidth / visualizer->count;
         float barHeight = (float)screenHeight / visualizer->count;
         for (SortType i = 0; i < visualizer->count; i++)
         {
             float barWidth = barUnitWidth * visualizer->values[i];
-            DrawRectangle((int)((float)screenWidth - barWidth) / 2, (int)(barHeight * i), (int)barWidth, (int)barHeight, GRAY);
+            int x = (int)(((float)screenWidth - barWidth) / 2);
+            int y = (int)(barHeight * i);
+            int width = (int)(barWidth);
+            int height = (int)(barHeight);
+            if (width < 1) width = 1;
+            if (height < 1) height = 1;
+            DrawRectangle(x, y, width, height, RAYWHITE);
+            if (barHeight > 4.0f) {
+                DrawRectangleLines(x, y, width, height, BLACK);
+            }
         }
         break;
     }
     case Circle: {
         float theta = 360.0f / visualizer->count;
-        // Define the center of the circle
         Vector2 center = {(float)screenWidth / 2.0f, (float)screenHeight / 2.0f};
         float radius = (float)screenHeight / 2.0f;
         for (SortType i = 0; i < visualizer->count; i++)
         {
-            // Calculate the start and end angles of the current segment
             float startAngle = theta * i;
             float endAngle = theta * (i + 1);
             float hue = (visualizer->values[i] / (float)visualizer->count);
-            ;                                          // Convert to degrees
-            Color color = hsv_to_rgb(hue, 1.0f, 1.0f); // Max saturation and value
+            Color color = hsv_to_rgb(hue, 1.0f, 1.0f);
             DrawCircleSector(center, radius, startAngle, endAngle, 10, color);
         }
     }

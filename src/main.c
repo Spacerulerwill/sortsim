@@ -37,19 +37,19 @@ static void handle_keys(Visualizer *visualizer, _Atomic bool *isSorting, _Atomic
         {
             shuffle(visualizer->values, visualizer->count, NULL);
         }
+
+        if (IsKeyPressed(KEY_LEFT))
+        {
+            *currentSort = *currentSort == 0 ? totalSorts - 1 : *currentSort - 1;
+        }
+        else if (IsKeyPressed(KEY_RIGHT))
+        {
+            *currentSort = *currentSort == totalSorts - 1 ? 0 : *currentSort + 1;
+        }
     }
     else if (IsKeyPressed(KEY_BACKSPACE))
     {
         atomic_store(continueSorting, false);
-    }
-
-    if (IsKeyPressed(KEY_LEFT))
-    {
-        *currentSort = *currentSort == 0 ? totalSorts - 1 : *currentSort - 1;
-    }
-    else if (IsKeyPressed(KEY_RIGHT))
-    {
-        *currentSort = *currentSort == totalSorts - 1 ? 0 : *currentSort + 1;
     }
 
     if (IsKeyPressed(KEY_UP))
@@ -106,13 +106,13 @@ int main()
     // Array to sort
     Visualizer visualizer;
     visualizer_init(&visualizer);
-    visualizer_resize(&visualizer, 512);
+    visualizer_resize(&visualizer, 128);
     shuffle(visualizer.values, visualizer.count, NULL);
     // Configuration
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(1280, 720, "Sorting Simulator");
     SetTargetFPS(60);
-    // atomic boolean flag to determine whether the sort is running
+    // atomic boolean flag to determine sort state
     _Atomic bool isSorting = false;
     _Atomic bool continueSorting = false;
     while (!WindowShouldClose())
