@@ -1,4 +1,5 @@
-﻿#include <stdatomic.h>
+﻿#include <inttypes.h>
+#include <stdatomic.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -62,7 +63,7 @@ static void handle_keys(Visualizer *visualizer, _Atomic bool *isSorting, _Atomic
     }
 }
 
-static void draw_text(SortStats *stats, size_t currentSort)
+static void draw_text(Visualizer *visualizer, size_t currentSort)
 {
     const char *text;
     switch (currentSort)
@@ -80,16 +81,24 @@ static void draw_text(SortStats *stats, size_t currentSort)
         text = "Cocktail Shaker Sort O(n^2)";
         break;
     case 4:
-        text = "Bogo Sort O(Infinity)";
+        text = "Bogo Sort O(n*n!)";
+        break;
+    case 5:
+        text = "Quick Sort O(nlogn)";
+        break;
+    case 6:
+        text = "Merge Sort O(nlogn)";
         break;
     default:
-        return;
+        fputs("Error: Current selected sort is somehow invalid, tell a programmer!\n", stderr);
+        exit(EXIT_FAILURE);
     }
-    char formatted[512];
+    char formatted[1024];
     int result = snprintf(formatted, sizeof(formatted),
-                          "%s\nSwaps Made: %zu\nComparisons Made: %zu\nArray "
+                          "%s - %" PRIu64 " microsecond delay\nSwaps Made : % zu\nComparisons Made : % zu\nArray"
                           "Accesses: %zu\nArray Writes: %zu",
-                          text, stats->swaps, stats->comparisons, stats->array_accesses, stats->array_writes);
+                          text, visualizer->delay, visualizer->sortStats.swaps, visualizer->sortStats.comparisons,
+                          visualizer->sortStats.array_accesses, visualizer->sortStats.array_writes);
     if (result == -1)
     {
         fputs("Failed to format string\n", stderr);
@@ -106,7 +115,7 @@ int main()
     // Array to sort
     Visualizer visualizer;
     visualizer_init(&visualizer);
-    visualizer_resize(&visualizer, 128);
+    visualizer_resize(&visualizer, 512);
     shuffle(visualizer.values, visualizer.count, NULL);
     // Configuration
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
@@ -121,7 +130,7 @@ int main()
         BeginDrawing();
         ClearBackground(BLACK);
         visualizer_draw(&visualizer);
-        draw_text(&visualizer.sortStats, currentSort);
+        draw_text(&visualizer, currentSort);
         EndDrawing();
     }
     // Cleanup

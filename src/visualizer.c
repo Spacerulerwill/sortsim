@@ -1,8 +1,12 @@
 #include "visualizer.h"
 
 #include <math.h>
+#include <stdlib.h>
 
 #include "raylib.h"
+
+const uint64_t MAX_DELAY = 10000;
+const uint64_t DEFAULT_DELAY = 2000;
 
 void sort_stats_reset(SortStats *sortStats)
 {
@@ -19,6 +23,7 @@ void visualizer_init(Visualizer *visualizer)
     SortStats stats = {0, 0, 0, 0};
     visualizer->sortStats = stats;
     visualizer->mode = Bars;
+    visualizer->delay = DEFAULT_DELAY;
 }
 
 void visualizer_resize(Visualizer *visualizer, SortType count)
@@ -75,7 +80,8 @@ static Color hsv_to_rgb(float h, float s, float v)
         r = v, g = p, b = q;
         break;
     default:
-        return (Color){255, 255, 255, 255}; // Should never happen
+        fputs("There is a bug with the hsv_to_rgb function, tell a programmer!", stderr); // Should never happen
+        exit(EXIT_FAILURE);
     }
 
     Color color;
@@ -105,8 +111,10 @@ void visualizer_draw(Visualizer *visualizer)
             int y = screenHeight - (int)barHeight;
             int width = (int)barWidth;
             int height = (int)barHeight;
-            if (width < 1) width = 1;
-            if (height < 1) height = 1;
+            if (width < 1)
+                width = 1;
+            if (height < 1)
+                height = 1;
             DrawRectangle(x, y, width, height, RAYWHITE);
             if (barWidth > 4.0f)
             {
@@ -125,10 +133,13 @@ void visualizer_draw(Visualizer *visualizer)
             int y = (int)(barHeight * i);
             int width = (int)(barWidth);
             int height = (int)(barHeight);
-            if (width < 1) width = 1;
-            if (height < 1) height = 1;
+            if (width < 1)
+                width = 1;
+            if (height < 1)
+                height = 1;
             DrawRectangle(x, y, width, height, RAYWHITE);
-            if (barHeight > 4.0f) {
+            if (barHeight > 4.0f)
+            {
                 DrawRectangleLines(x, y, width, height, BLACK);
             }
         }
@@ -146,8 +157,10 @@ void visualizer_draw(Visualizer *visualizer)
             Color color = hsv_to_rgb(hue, 1.0f, 1.0f);
             DrawCircleSector(center, radius, startAngle, endAngle, 10, color);
         }
+        break;
     }
     default:
-        return;
+        fputs("Error: Current selected visualizer mode is somehow invalid, tell a programmer!\n", stderr);
+        exit(EXIT_FAILURE);
     }
 }
