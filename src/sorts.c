@@ -34,13 +34,55 @@ static void sleep_microseconds(uint64_t microseconds)
 #endif
 }
 
-bool is_already_sorted(SortType *values, SortType count, SortStats *sortStats)
+int perform_sort(void *arg)
 {
-    for (SortType i = 0; i < count - 1; i++)
+    Visualizer *visualizer = (Visualizer *)arg;
+    sort_stats_reset(&visualizer->sortStats);
+    SortFunctionArgs sortFunctionArgs = {&visualizer->sortStats, visualizer->values, visualizer->count,
+                                         &visualizer->cancelSort, &visualizer->speed};
+    sortFunctions[visualizer->selectedSort](sortFunctionArgs);
+    if (atomic_load(&visualizer->cancelSort))
+    {
+        for (size_t i = 0; i < visualizer->count; i++)
+        {
+            visualizer->values[i] = (SortValueType)(visualizer->count - i);
+        }
+        shuffle(visualizer->values, visualizer->count, NULL);
+        sort_stats_reset(&visualizer->sortStats);
+        atomic_store(&visualizer->cancelSort, false);
+    }
+    atomic_store(&visualizer->isSorting, false);
+    return 0;
+}
+
+void shuffle(SortValueType *values, size_t count, SortStats *sortStats)
+{
+    if (count > 1)
+    {
+        size_t i;
+        for (i = 0; i < count - 1; i++)
+        {
+            size_t j = i + (size_t)rand() / (RAND_MAX / (count - i) + 1);
+            SortValueType t = values[j];
+            values[j] = values[i];
+            values[i] = t;
+            if (sortStats)
+            {
+                sortStats->swaps++;
+                sortStats->arrayAccesses += 2;
+                sortStats->arrayWrites += 2;
+            }
+        }
+    }
+}
+
+bool is_already_sorted(SortValueType *values, size_t count, SortStats *sortStats)
+{
+    for (size_t i = 0; i < count - 1; i++)
     {
         if (sortStats)
         {
-            sortStats->array_accesses += 2;
+            sortStats->arrayAccesses += 2;
             sortStats->comparisons += 1;
         }
         if (values[i] > values[i + 1])
@@ -51,302 +93,263 @@ bool is_already_sorted(SortType *values, SortType count, SortStats *sortStats)
     return true;
 }
 
-void shuffle(SortType *values, SortType count, SortStats *stats)
+static void swap(SortStats *stats, SortValueType *a, SortValueType *b)
 {
-    size_t n = (size_t)count;
-    if (n > 1)
-    {
-        size_t i;
-        for (i = 0; i < n - 1; i++)
-        {
-            size_t j = i + (size_t)rand() / (RAND_MAX / (n - i) + 1);
-            SortType t = values[j];
-            values[j] = values[i];
-            values[i] = t;
-            if (stats)
-            {
-                stats->swaps++;
-                stats->array_accesses += 2;
-                stats->array_writes += 2;
-            }
-        }
-    }
-}
-
-static void swap(SortStats *stats, SortType *a, SortType *b)
-{
-    SortType temp = *a;
+    SortValueType temp = *a;
     *a = *b;
     *b = temp;
     stats->swaps++;
-    stats->array_accesses += 2;
-    stats->array_writes += 2;
+    stats->arrayAccesses += 2;
+    stats->arrayWrites += 2;
 }
 
-int perform_sort(void *arg)
+static void bubble_sort(SortFunctionArgs args)
 {
-    PerformSortParameter *param = (PerformSortParameter *)arg;
-    Visualizer *visualizer = param->visualizer;
-    atomic_store(param->isSorting, true);
-    atomic_store(param->continueSorting, true);
-    sort_stats_reset(&visualizer->sortStats);
-    param->sort(&visualizer->sortStats, visualizer->values, visualizer->count, param->continueSorting,
-                visualizer->delay);
-    if (atomic_load(param->continueSorting))
-    {
-        atomic_store(param->continueSorting, false);
-    }
-    else
-    {
-        for (SortType i = 0; i < visualizer->count; i++)
-        {
-            visualizer->values[i] = visualizer->count - i;
-        }
-        shuffle(visualizer->values, visualizer->count, NULL);
-        sort_stats_reset(&visualizer->sortStats);
-    }
-    atomic_store(param->isSorting, false);
-    free(param);
-    return 0;
-}
-
-void bubble_sort(SortStats *stats, SortType *values, SortType count, _Atomic bool *continueSorting, uint64_t delay)
-{
-    SortType i, j;
+#define BUBBLE_SORT_SLEEP sleep_microseconds((uint64_t)(*args.speed * 1000.0f));
     bool swapped = true;
-    for (i = 0; i < count - 1 && swapped; i++)
+    SortStats *sortStats = args.sortStats;
+    SortValueType *values = args.values;
+    size_t count = args.count;
+    for (size_t i = 0; i < count - 1 && swapped; i++)
     {
         swapped = false;
-        for (j = 0; j < count - i - 1; j++)
+        for (size_t j = 0; j < count - i - 1; j++)
         {
             if (values[j] > values[j + 1])
             {
-                swap(stats, &values[j + 1], &values[j]);
+                swap(sortStats, &values[j + 1], &values[j]);
                 swapped = true;
             }
-            stats->comparisons++;
-            sleep_microseconds(delay);
-            if (!atomic_load(continueSorting))
+            sortStats->comparisons++;
+            BUBBLE_SORT_SLEEP
+            if (atomic_load(args.cancelSort))
                 return;
         }
     }
+#undef BUBBLE_SORT_SLEEP
 }
 
-void selection_sort(SortStats *stats, SortType *values, SortType count, _Atomic bool *continueSorting, uint64_t delay)
+static void selection_sort(SortFunctionArgs args)
 {
-    SortType i, j, min_idx;
-    for (i = 0; i < count - 1; i++)
+#define SELECTION_SORT_SLEEP sleep_microseconds((uint64_t)(*args.speed * 1000.0f));
+    SortStats *sortStats = args.sortStats;
+    SortValueType *values = args.values;
+    size_t count = args.count;
+    size_t min_idx = 0;
+    for (size_t i = 0; i < count - 1; i++)
     {
         min_idx = i;
-        for (j = i + 1; j < count; j++)
+        for (size_t j = i + 1; j < count; j++)
         {
             if (values[j] < values[min_idx])
                 min_idx = j;
-            stats->comparisons++;
-            sleep_microseconds(delay);
-            if (!atomic_load(continueSorting))
+            sortStats->comparisons++;
+            SELECTION_SORT_SLEEP
+            if (atomic_load(args.cancelSort))
                 return;
         }
-        swap(stats, &values[min_idx], &values[i]);
+        swap(sortStats, &values[min_idx], &values[i]);
     }
+#undef SELECTION_SORT_SLEEP
 }
 
-void insertion_sort(SortStats *stats, SortType *values, SortType count, _Atomic bool *continueSorting, uint64_t delay)
+static void insertion_sort(SortFunctionArgs args)
 {
-    SortType i, key, j;
-    for (i = 1; i < count; i++)
+#define INSERTION_SORT_SLEEP sleep_microseconds((uint64_t)(*args.speed * 1000.0f));
+    SortStats *sortStats = args.sortStats;
+    SortValueType *values = args.values;
+    size_t count = args.count;
+    SortValueType key = 0;
+    for (size_t i = 1; i < count; i++)
     {
         key = values[i];
-        stats->array_accesses++;
-        j = i;
+        sortStats->arrayAccesses++;
+        size_t j = i;
         while (j > 0 && values[j - 1] > key)
         {
-            stats->comparisons++;
+            sortStats->comparisons++;
             values[j] = values[j - 1];
-            stats->array_writes++;
-            stats->swaps++;
+            sortStats->arrayWrites++;
+            sortStats->swaps++;
             j--;
-            sleep_microseconds(delay);
-            if (!atomic_load(continueSorting))
+            INSERTION_SORT_SLEEP
+            if (atomic_load(args.cancelSort))
                 return;
         }
         values[j] = key;
-        stats->array_writes++;
+        sortStats->arrayWrites++;
     }
+#undef INSERTION_SORT_SLEEP
 }
 
-void cocktail_shaker_sort(SortStats *stats, SortType *values, SortType count, _Atomic bool *continueSorting,
-                          uint64_t delay)
+static void cocktail_shaker_sort(SortFunctionArgs args)
 {
-    SortType left = 0;
-    SortType right = count - 1;
+#define COCKTAIL_SHAKER_SORT_SLEEP sleep_microseconds((uint64_t)(*args.speed * 1000.0f));
+    SortStats *sortStats = args.sortStats;
+    SortValueType *values = args.values;
+    size_t count = args.count;
+    size_t left = 0;
+    size_t right = count - 1;
     bool swapped = true;
-
     while (left < right && swapped)
     {
         swapped = false;
-
         // Move the largest element to the end
-        for (int i = left; i < right; ++i)
+        for (size_t i = left; i < right; ++i)
         {
             if (values[i] > values[i + 1])
             {
-                swap(stats, &values[i], &values[i + 1]);
-                sleep_microseconds(delay);
-                if (!atomic_load(continueSorting))
+                swap(sortStats, &values[i], &values[i + 1]);
+                COCKTAIL_SHAKER_SORT_SLEEP
+                if (atomic_load(args.cancelSort))
                     return;
                 swapped = true;
             }
-            stats->comparisons++;
+            sortStats->comparisons++;
         }
         right--;
 
         // Move the smallest element to the beginning
-        for (int i = right; i > left; --i)
+        for (size_t i = right; i > left; --i)
         {
             if (values[i] < values[i - 1])
             {
-                swap(stats, &values[i], &values[i - 1]);
-                sleep_microseconds(delay);
-                if (!atomic_load(continueSorting))
+                swap(sortStats, &values[i], &values[i - 1]);
+                COCKTAIL_SHAKER_SORT_SLEEP
+                if (atomic_load(args.cancelSort))
                     return;
                 swapped = true;
             }
-            stats->comparisons++;
+            sortStats->comparisons++;
         }
         left++;
     }
+#undef COCKTAIL_SHAKER_SORT_SLEEP
 }
 
-void bogo_sort(SortStats *stats, SortType *values, SortType count, _Atomic bool *continueSorting, uint64_t delay)
+#define QUICK_SORT_SLEEP sleep_microseconds((uint64_t)(*args->speed * 50000.0f));
+static size_t quicksort_partition(size_t low, size_t high, SortFunctionArgs *args)
 {
-    while (!(is_already_sorted(values, count, stats)))
-    {
-        shuffle(values, count, stats);
-        sleep_microseconds(delay);
-        if (!atomic_load(continueSorting))
-            return;
-    }
-}
+    SortStats *sortStats = args->sortStats;
+    SortValueType *values = args->values;
 
-static SortType quicksort_partition(SortType low, SortType high, SortStats *stats, SortType *values,
-                                    _Atomic bool *continueSorting, uint64_t delay)
-{
-    SortType pivot = values[low];
-    SortType i = low + 1;
-    SortType j = high;
-    stats->comparisons++;
+    SortValueType pivot = values[low];
+    size_t i = low + 1;
+    size_t j = high;
+    sortStats->comparisons++;
     while (i <= j)
     {
-        stats->comparisons++;
+        sortStats->comparisons++;
         while (i <= high && values[i] <= pivot)
         {
             i++;
         }
-        stats->comparisons++;
+        sortStats->comparisons++;
         while (j >= low && values[j] > pivot)
         {
             j--;
         }
         if (i < j)
         {
-            swap(stats, &values[i], &values[j]);
-            sleep_microseconds(delay);
-            if (!atomic_load(continueSorting))
+            swap(sortStats, &values[i], &values[j]);
+            QUICK_SORT_SLEEP
+            if (atomic_load(args->cancelSort))
                 return 0;
         }
     }
-    swap(stats, &values[low], &values[j]);
-    sleep_microseconds(delay);
-    if (!atomic_load(continueSorting))
+    swap(sortStats, &values[low], &values[j]);
+    QUICK_SORT_SLEEP
+    if (atomic_load(args->cancelSort))
         return 0;
     return j;
 }
 
-static void quicksort_impl(SortType low, SortType high, SortStats *stats, SortType *values,
-                           _Atomic bool *continueSorting, uint64_t delay)
+static void quicksort_impl(size_t low, size_t high, SortFunctionArgs *args)
 {
     if (low >= high)
         return;
 
-    SortType partition_idx = quicksort_partition(low, high, stats, values, continueSorting, delay);
-    if (!atomic_load(continueSorting))
+    size_t partition_idx = quicksort_partition(low, high, args);
+    if (atomic_load(args->cancelSort))
         return;
 
     if (partition_idx > 0)
-        quicksort_impl(low, partition_idx - 1, stats, values, continueSorting, delay);
-    quicksort_impl(partition_idx + 1, high, stats, values, continueSorting, delay);
+        quicksort_impl(low, partition_idx - 1, args);
+    quicksort_impl(partition_idx + 1, high, args);
 }
 
-void quicksort(SortStats *stats, SortType *values, SortType count, _Atomic bool *continueSorting, uint64_t delay)
+static void quick_sort(SortFunctionArgs args)
 {
-    quicksort_impl(0, count - 1, stats, values, continueSorting, delay);
+    quicksort_impl(0, args.count - 1, &args);
 }
+#undef QUICK_SORT_SLEEP
 
-static void merge(SortStats *stats, SortType *values, SortType low, SortType mid, SortType high,
-                  _Atomic bool *continueSorting, uint64_t delay)
+#define MERGE_SORT_SLEEP sleep_microseconds((uint64_t)(*args->speed * 10000.0f));
+static void merge(size_t low, size_t mid, size_t high, SortFunctionArgs *args)
 {
+    SortStats *sortStats = args->sortStats;
+    SortValueType *values = args->values;
     /*
      * This macro is helpful as the merge function uses heap allocated memory. Instead of repeating this large
      * block of code in every place where we need to exit the sort we use this macro.
      */
 #define CONTINUE_SORT_CHECK                                                                                            \
-    if (!atomic_load(continueSorting))                                                                                 \
+    if (atomic_load(args->cancelSort))                                                                                 \
     {                                                                                                                  \
         free(leftSide);                                                                                                \
         free(rightSide);                                                                                               \
         return;                                                                                                        \
     }                                                                                                                  \
     // Create temp arrays and copy data to them
-    SortType leftSize = mid - low + 1;
-    SortType rightSize = high - mid;
-    SortType *leftSide = malloc(leftSize * sizeof(SortType));
+    size_t leftSize = mid - low + 1;
+    size_t rightSize = high - mid;
+    SortValueType *leftSide = malloc(leftSize * sizeof(SortValueType));
     if (leftSide == NULL)
     {
         fputs("Failed to allocate memory to left side during merge sort\n", stderr);
         exit(EXIT_FAILURE);
     }
-    SortType *rightSide = malloc(rightSize * sizeof(SortType));
+    SortValueType *rightSide = malloc(rightSize * sizeof(SortValueType));
     if (rightSide == NULL)
     {
         fputs("Failed to allocate memory to right side during merge sort\n", stderr);
         free(leftSide);
         exit(EXIT_FAILURE);
     }
-    for (SortType i = 0; i < leftSize; i++)
+    for (size_t i = 0; i < leftSize; i++)
     {
-        stats->array_writes++;
-        stats->array_accesses++;
+        sortStats->arrayWrites++;
+        sortStats->arrayAccesses++;
         leftSide[i] = values[low + i];
         CONTINUE_SORT_CHECK
     }
-    for (SortType j = 0; j < rightSize; j++)
+    for (size_t j = 0; j < rightSize; j++)
     {
-        stats->array_writes++;
-        stats->array_accesses++;
+        sortStats->arrayWrites++;
+        sortStats->arrayAccesses++;
         rightSide[j] = values[mid + 1 + j];
         CONTINUE_SORT_CHECK
     }
     // Merge temp arrays back
-    SortType i = 0;
-    SortType j = 0;
-    SortType k = low;
+    size_t i = 0;
+    size_t j = 0;
+    size_t k = low;
     while (i < leftSize && j < rightSize)
     {
-        stats->comparisons++;
+        sortStats->comparisons++;
         if (leftSide[i] <= rightSide[j])
         {
             values[k] = leftSide[i];
-            stats->array_writes++;
-            sleep_microseconds(delay);
+            sortStats->arrayWrites++;
+            MERGE_SORT_SLEEP
             CONTINUE_SORT_CHECK
             i++;
         }
         else
         {
             values[k] = rightSide[j];
-            stats->array_writes++;
-            sleep_microseconds(delay);
+            sortStats->arrayWrites++;
+            MERGE_SORT_SLEEP
             CONTINUE_SORT_CHECK
             j++;
         }
@@ -357,8 +360,8 @@ static void merge(SortStats *stats, SortType *values, SortType low, SortType mid
     while (i < leftSize)
     {
         values[k] = leftSide[i];
-        stats->array_writes++;
-        sleep_microseconds(delay);
+        sortStats->arrayWrites++;
+        MERGE_SORT_SLEEP
         CONTINUE_SORT_CHECK
         i++;
         k++;
@@ -366,8 +369,8 @@ static void merge(SortStats *stats, SortType *values, SortType low, SortType mid
     while (j < rightSize)
     {
         values[k] = rightSide[j];
-        stats->array_writes++;
-        sleep_microseconds(delay);
+        sortStats->arrayWrites++;
+        MERGE_SORT_SLEEP
         CONTINUE_SORT_CHECK
         j++;
         k++;
@@ -377,26 +380,42 @@ static void merge(SortStats *stats, SortType *values, SortType low, SortType mid
 #undef CONTINUE_SORT_CHECK
 }
 
-static void merge_sort_impl(SortStats *stats, SortType *values, SortType low, SortType high,
-                            _Atomic bool *continueSorting, uint64_t delay)
+static void merge_sort_impl(size_t low, size_t high, SortFunctionArgs *args)
 {
     if (low >= high)
         return;
-    if (!atomic_load(continueSorting))
+    if (atomic_load(args->cancelSort))
         return;
-    SortType mid = low + (high - low) / 2;
-    merge_sort_impl(stats, values, low, mid, continueSorting, delay);
-    merge_sort_impl(stats, values, mid + 1, high, continueSorting, delay);
-    merge(stats, values, low, mid, high, continueSorting, delay);
+    size_t mid = low + (high - low) / 2;
+    merge_sort_impl(low, mid, args);
+    merge_sort_impl(mid + 1, high, args);
+    merge(low, mid, high, args);
 }
 
-void merge_sort(SortStats *stats, SortType *values, SortType count, _Atomic bool *continueSorting, uint64_t delay)
+static void merge_sort(SortFunctionArgs args)
 {
-    if (count < 2)
+    if (args.count < 2)
         return;
-    merge_sort_impl(stats, values, 0, count - 1, continueSorting, delay);
+    merge_sort_impl(0, args.count - 1, &args);
+}
+#undef MERGE_SORT_SLEEP
+
+static void bogo_sort(SortFunctionArgs args)
+{
+#define BOGO_SORT_SLEEP sleep_microseconds((uint64_t)(*args.speed * 1000.0f));
+    SortStats *sortStats = args.sortStats;
+    SortValueType *values = args.values;
+    size_t count = args.count;
+    while (!(is_already_sorted(values, count, sortStats)))
+    {
+        shuffle(values, count, sortStats);
+        BOGO_SORT_SLEEP
+        if (atomic_load(args.cancelSort))
+            return;
+    }
+#undef BOGO_SORT_SLEEP
 }
 
 const SortFunction sortFunctions[] = {bubble_sort, selection_sort, insertion_sort, cocktail_shaker_sort,
-                                      bogo_sort,   quicksort,      merge_sort};
+                                      quick_sort,  merge_sort,     bogo_sort};
 const size_t totalSorts = sizeof(sortFunctions) / sizeof(SortFunction);
