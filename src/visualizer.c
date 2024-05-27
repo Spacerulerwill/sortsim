@@ -181,17 +181,25 @@ void visualizer_draw_gui(Visualizer *visualizer)
     float widgetY = (float)GetScreenHeight() - 30.0f;
     // Sort select dropdown
     static bool sortDropdownEditMode = false;
+    static int sortSelected = 0;
     if (GuiDropdownBox((Rectangle){10, widgetY, 150, 20},
                        "Bubble Sort;Selection Sort;Insertion Sort;Cocktail Shaker Sort;Quick Sort;Merge Sort;Bogo Sort",
-                       &visualizer->selectedSort, sortDropdownEditMode))
+                       &sortSelected, sortDropdownEditMode))
     {
+        if (sortDropdownEditMode) {
+            visualizer->selectedSort = (SortType)sortSelected;
+        }
         sortDropdownEditMode = !sortDropdownEditMode;
     }
     // Mode select dropdown
     static bool modeDropdwonEditMode = false;
-    if (GuiDropdownBox((Rectangle){170, widgetY, 110, 20}, "Staircase;Pyramid;Color Wheel", &visualizer->mode,
+    static int modeSelected = 0;
+    if (GuiDropdownBox((Rectangle){170, widgetY, 110, 20}, "Staircase;Pyramid;Color Wheel", &modeSelected,
                        modeDropdwonEditMode))
     {
+        if (modeDropdwonEditMode) {
+            visualizer->mode = (VisualizerMode)modeSelected;
+        }
         modeDropdwonEditMode = !modeDropdwonEditMode;
     }
     // Speed slider
