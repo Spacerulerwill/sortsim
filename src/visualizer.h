@@ -8,6 +8,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define DEFAULT_VISUALIZER_SIZE 64
+
 typedef uint16_t SortValueType;
 
 typedef enum

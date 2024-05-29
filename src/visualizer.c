@@ -8,7 +8,9 @@
 #include <stdlib.h>
 #include <threads.h>
 
-const int TOOLBAR_HEIGHT = 45;
+#define MAX_VISUALIZER_SIZE 256
+#define MIN_VISUALIZER_SIZE 8
+#define TOOLBAR_HEIGHT 45
 
 static Color hsv_to_rgb(float h, float s, float v)
 {
@@ -69,10 +71,10 @@ void visualizer_init(Visualizer *visualizer)
     SortStats sortStats = {0, 0, 0, 0};
     visualizer->sortStats = sortStats;
     visualizer->mode = Staircase;
-    visualizer->speed = 1.0f;
+    visualizer->speed = 0.5f;
     visualizer->isSorting = false;
     visualizer->cancelSort = false;
-    visualizer->selectedSort = MergeSort;
+    visualizer->selectedSort = BubbleSort;
 }
 
 void visualizer_free(Visualizer *visualizer)
@@ -121,6 +123,7 @@ void visualizer_draw(Visualizer *visualizer)
                 width = 1;
             if (height < 1)
                 height = 1;
+            Color color;
             DrawRectangle(x, y - TOOLBAR_HEIGHT, width, height, RAYWHITE);
             if (barWidth > 4.0f)
             {
@@ -173,6 +176,24 @@ void visualizer_draw(Visualizer *visualizer)
 
 void visualizer_draw_gui(Visualizer *visualizer)
 {
+    // Top left text
+    SortStats* sortStats = &visualizer->sortStats;
+    char formatted[256];
+    int result = snprintf(formatted, sizeof(formatted),
+                          "Swaps Made : %zu\nComparisons Made : %zu\n"
+                          "Array Accesses: %zu\nArray Writes: %zu",
+                          sortStats->swaps,
+                          sortStats->comparisons,
+                          sortStats->arrayAccesses,
+                          sortStats->arrayWrites
+                          );
+    if (result == -1)
+    {
+        fputs("Failed to format string\n", stderr);
+        exit(EXIT_FAILURE);
+    }
+    DrawText(formatted, 20, 20, 20, GREEN);
+    // Toolbar
     DrawRectangle(0, GetScreenHeight() - TOOLBAR_HEIGHT, GetScreenWidth(), TOOLBAR_HEIGHT,
                   GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
     GuiGroupBox((Rectangle){0, (float)(GetScreenHeight() - TOOLBAR_HEIGHT + 5), (float)GetScreenWidth(),
@@ -181,49 +202,53 @@ void visualizer_draw_gui(Visualizer *visualizer)
     float widgetY = (float)GetScreenHeight() - 30.0f;
     // Sort select dropdown
     static bool sortDropdownEditMode = false;
-    static int sortSelected = 0;
-    if (GuiDropdownBox((Rectangle){10, widgetY, 150, 20},
+    if (atomic_load(&visualizer->isSorting)) {
+        GuiLock();
+    }
+    if (GuiRollupBox((Rectangle){10, widgetY, 150, 20},
                        "Bubble Sort;Selection Sort;Insertion Sort;Cocktail Shaker Sort;Quick Sort;Merge Sort;Bogo Sort",
-                       &sortSelected, sortDropdownEditMode))
+                       (int*)&visualizer->selectedSort, sortDropdownEditMode))
     {
-        if (sortDropdownEditMode) {
-            visualizer->selectedSort = (SortType)sortSelected;
-        }
         sortDropdownEditMode = !sortDropdownEditMode;
     }
+    GuiUnlock();
     // Mode select dropdown
     static bool modeDropdwonEditMode = false;
-    static int modeSelected = 0;
-    if (GuiDropdownBox((Rectangle){170, widgetY, 110, 20}, "Staircase;Pyramid;Color Wheel", &modeSelected,
+    if (GuiRollupBox((Rectangle){170, widgetY, 110, 20}, "Staircase;Pyramid;Color Wheel", (int*)&visualizer->mode,
                        modeDropdwonEditMode))
     {
-        if (modeDropdwonEditMode) {
-            visualizer->mode = (VisualizerMode)modeSelected;
-        }
         modeDropdwonEditMode = !modeDropdwonEditMode;
     }
     // Speed slider
-    static float speedSliderValue = 0.5f;
-    GuiSliderBar((Rectangle){290, widgetY, 140, 20}, NULL, "Delay", &speedSliderValue, 0.0f, 1.0f);
-    visualizer->speed = speedSliderValue;
+    GuiSliderBar((Rectangle){290, widgetY, 140, 20}, NULL, "Delay", &visualizer->speed, 0.0f, 1.0f);
+    // Size slider
+    if (atomic_load(&visualizer->isSorting)) {
+        GuiLock();
+    }
+    static float x = (float)DEFAULT_VISUALIZER_SIZE / (float)(MAX_VISUALIZER_SIZE - MIN_VISUALIZER_SIZE);
+    if (GuiSliderBar((Rectangle){480, widgetY, 140, 20}, NULL, "Size", &x, 0.0f, 1.0f)) {
+        float new_size = (float)MIN_VISUALIZER_SIZE + x * (float)(MAX_VISUALIZER_SIZE - MIN_VISUALIZER_SIZE);
+        visualizer_resize(visualizer, (size_t)new_size);
+    };
+    GuiUnlock();
     // Sort and shuffle button
     if (atomic_load(&visualizer->isSorting))
     {
-        if (GuiButton((Rectangle){480, widgetY, 50, 20}, "Cancel"))
+        if (GuiButton((Rectangle){660, widgetY, 50, 20}, "Cancel"))
         {
             atomic_store(&visualizer->cancelSort, true);
         }
         GuiLock();
-        GuiButton((Rectangle){540, widgetY, 50, 20}, "Shuffle");
+        GuiButton((Rectangle){720, widgetY, 50, 20}, "Shuffle");
         GuiUnlock();
     }
     else
     {
-        if (GuiButton((Rectangle){540, widgetY, 50, 20}, "Shuffle"))
+        if (GuiButton((Rectangle){660, widgetY, 50, 20}, "Shuffle"))
         {
-            shuffle(visualizer->values, visualizer->count, &visualizer->sortStats);
+            shuffle(visualizer->values, visualizer->count, NULL);
         }
-        if (GuiButton((Rectangle){480, widgetY, 50, 20}, "Sort"))
+        if (GuiButton((Rectangle){720, widgetY, 50, 20}, "Sort"))
         {
             visualizer_start_sort(visualizer);
         }
