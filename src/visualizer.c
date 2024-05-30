@@ -123,7 +123,6 @@ void visualizer_draw(Visualizer *visualizer)
                 width = 1;
             if (height < 1)
                 height = 1;
-            Color color;
             DrawRectangle(x, y - TOOLBAR_HEIGHT, width, height, RAYWHITE);
             if (barWidth > 4.0f)
             {
