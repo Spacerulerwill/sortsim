@@ -16,6 +16,7 @@ typedef enum
 {
     Staircase,
     Pyramid,
+    Spiral,
     Circle,
     NumModes,
 } VisualizerMode;

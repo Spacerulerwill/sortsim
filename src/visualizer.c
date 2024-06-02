@@ -153,6 +153,21 @@ void visualizer_draw(Visualizer *visualizer)
         }
         break;
     }
+    case Spiral: {
+        float theta = 0.0f; 
+        float deltaTheta = (360.0f / visualizer->count) * 3.0f;
+        Vector2 center = {(float)screenWidth / 2.0f, (float)(screenHeight / 2.0f) - TOOLBAR_HEIGHT / 2.0f};
+        float radius = ((float)screenHeight * drawHeight) / 2.0f;
+
+        for (size_t i = 0; i < visualizer->count; i++) {
+            float length = visualizer->values[i] / (float)visualizer->count;
+            float x = center.x + radius * length * cosf(theta * DEG2RAD);
+            float y = center.y + radius * length * sinf(theta * DEG2RAD);
+            DrawCircle(x, y, 5.0f, BLUE);
+            theta += deltaTheta;
+        }
+        break;
+    }
     case Circle: {
         float theta = 360.0f / visualizer->count;
         Vector2 center = {(float)screenWidth / 2.0f, (float)(screenHeight / 2.0f) - TOOLBAR_HEIGHT / 2.0f};
@@ -213,7 +228,7 @@ void visualizer_draw_gui(Visualizer *visualizer)
     GuiUnlock();
     // Mode select dropdown
     static bool modeDropdwonEditMode = false;
-    if (GuiRollupBox((Rectangle){170, widgetY, 110, 20}, "Staircase;Pyramid;Color Wheel", (int*)&visualizer->mode,
+    if (GuiRollupBox((Rectangle){170, widgetY, 110, 20}, "Staircase;Pyramid;Spiral;Color Wheel", (int*)&visualizer->mode,
                        modeDropdwonEditMode))
     {
         modeDropdwonEditMode = !modeDropdwonEditMode;
