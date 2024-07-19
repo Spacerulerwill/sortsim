@@ -219,7 +219,9 @@ void visualizer_draw_gui(Visualizer *visualizer)
     if (atomic_load(&visualizer->isSorting)) {
         GuiLock();
     }
-    if (GuiRollupBox((Rectangle){10, widgetY, 150, 20},
+    // Draw rollup box
+    GuiSetStyle(DROPDOWNBOX, DROPDOWN_ROLL_UP, 1);
+    if (GuiDropdownBox((Rectangle){10, widgetY, 150, 20},
                        "Bubble Sort;Selection Sort;Insertion Sort;Cocktail Shaker Sort;Quick Sort;Merge Sort;Bogo Sort",
                        (int*)&visualizer->selectedSort, sortDropdownEditMode))
     {
@@ -228,11 +230,12 @@ void visualizer_draw_gui(Visualizer *visualizer)
     GuiUnlock();
     // Mode select dropdown
     static bool modeDropdwonEditMode = false;
-    if (GuiRollupBox((Rectangle){170, widgetY, 110, 20}, "Staircase;Pyramid;Spiral;Color Wheel", (int*)&visualizer->mode,
+    if (GuiDropdownBox((Rectangle){170, widgetY, 110, 20}, "Staircase;Pyramid;Spiral;Color Wheel", (int*)&visualizer->mode,
                        modeDropdwonEditMode))
     {
         modeDropdwonEditMode = !modeDropdwonEditMode;
     }
+    GuiSetStyle(DROPDOWNBOX, DROPDOWN_ROLL_UP, 0);
     // Speed slider
     GuiSliderBar((Rectangle){290, widgetY, 140, 20}, NULL, "Delay", &visualizer->speed, 0.0f, 1.0f);
     // Size slider
