@@ -9,8 +9,24 @@ add_executable(${PROJECT_NAME}
     src/main.c
     src/visualizer.c
     src/visualizer.h
-    src/sorts.c
-    src/sorts.h
+    src/sorts/sorts.c
+    src/sorts/sorts.h
+    src/sorts/bubble_sort.c
+    src/sorts/bubble_sort.h
+    src/sorts/selection_sort.c
+    src/sorts/selection_sort.h
+    src/sorts/insertion_sort.c
+    src/sorts/insertion_sort.h
+    src/sorts/cocktail_shaker_sort.c
+    src/sorts/cocktail_shaker_sort.h
+    src/sorts/merge_sort.c
+    src/sorts/merge_sort.h
+    src/sorts/quick_sort.c
+    src/sorts/quick_sort.h
+    src/sorts/bogo_sort.c
+    src/sorts/bogo_sort.h
+    src/sorts/heap_sort.h
+    src/sorts/heap_sort.c
 )
 
 add_subdirectory(raylib)

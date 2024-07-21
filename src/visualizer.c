@@ -1,5 +1,5 @@
 #include "visualizer.h"
-#include "sorts.h"
+#include "sorts/sorts.h"
 #include <math.h>
 #include <raygui.h>
 #include <raylib.h>
@@ -222,7 +222,7 @@ void visualizer_draw_gui(Visualizer *visualizer)
     // Draw rollup box
     GuiSetStyle(DROPDOWNBOX, DROPDOWN_ROLL_UP, 1);
     if (GuiDropdownBox((Rectangle){10, widgetY, 150, 20},
-                       "Bubble Sort;Selection Sort;Insertion Sort;Cocktail Shaker Sort;Quick Sort;Merge Sort;Bogo Sort",
+                       "Bubble Sort;Selection Sort;Insertion Sort;Cocktail Shaker Sort;Quick Sort;Merge Sort;Heap Sort;Bogo Sort",
                        (int*)&visualizer->selectedSort, sortDropdownEditMode))
     {
         sortDropdownEditMode = !sortDropdownEditMode;
