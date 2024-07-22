@@ -56,7 +56,7 @@ static Color hsv_to_rgb(float h, float s, float v)
     return color;
 }
 
-void sort_stats_reset(SortStats *sortStats)
+void sort_stats_reset(struct SortStats *sortStats)
 {
     sortStats->swaps = 0;
     sortStats->comparisons = 0;
@@ -64,11 +64,11 @@ void sort_stats_reset(SortStats *sortStats)
     sortStats->arrayWrites = 0;
 }
 
-void visualizer_init(Visualizer *visualizer)
+void visualizer_init(struct Visualizer *visualizer)
 {
     visualizer->values = NULL;
     visualizer->count = 0;
-    SortStats sortStats = {0, 0, 0, 0};
+    struct SortStats sortStats = {0, 0, 0, 0};
     visualizer->sortStats = sortStats;
     visualizer->mode = Staircase;
     visualizer->speed = 0.5f;
@@ -77,14 +77,14 @@ void visualizer_init(Visualizer *visualizer)
     visualizer->selectedSort = BubbleSort;
 }
 
-void visualizer_free(Visualizer *visualizer)
+void visualizer_free(struct Visualizer *visualizer)
 {
     free(visualizer->values);
     visualizer->values = NULL;
     visualizer->count = 0;
 }
 
-void visualizer_resize(Visualizer *visualizer, size_t count)
+void visualizer_resize(struct Visualizer *visualizer, size_t count)
 {
     free(visualizer->values);
     visualizer->values = malloc(count * sizeof(SortValueType));
@@ -100,7 +100,7 @@ void visualizer_resize(Visualizer *visualizer, size_t count)
     }
 }
 
-void visualizer_draw(Visualizer *visualizer)
+void visualizer_draw(struct Visualizer *visualizer)
 {
     const int screenWidth = GetScreenWidth();
     const int screenHeight = GetScreenHeight();
@@ -188,10 +188,10 @@ void visualizer_draw(Visualizer *visualizer)
     }
 }
 
-void visualizer_draw_gui(Visualizer *visualizer)
+void visualizer_draw_gui(struct Visualizer *visualizer)
 {
     // Top left text
-    SortStats* sortStats = &visualizer->sortStats;
+    struct SortStats *sortStats = &visualizer->sortStats;
     char formatted[256];
     int result = snprintf(formatted, sizeof(formatted),
                           "Swaps Made : %zu\nComparisons Made : %zu\n"
@@ -272,7 +272,7 @@ void visualizer_draw_gui(Visualizer *visualizer)
     }
 }
 
-void visualizer_start_sort(Visualizer *visualizer)
+void visualizer_start_sort(struct Visualizer *visualizer)
 {
     if (is_already_sorted(visualizer->values, visualizer->count, NULL))
         return;

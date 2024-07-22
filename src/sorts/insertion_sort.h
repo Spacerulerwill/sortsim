@@ -3,6 +3,6 @@
 
 #include "sorts.h"
 
-void insertion_sort(SortFunctionArgs args);
+void insertion_sort(struct SortFunctionArgs args);
 
 #endif // !INSERTION_SORT_H

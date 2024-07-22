@@ -3,6 +3,6 @@
 
 #include "sorts.h"
 
-void quick_sort(SortFunctionArgs args);
+void quick_sort(struct SortFunctionArgs args);
 
 #endif // !QUICK_SORT_H

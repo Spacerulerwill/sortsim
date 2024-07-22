@@ -1,9 +1,9 @@
 #include "cocktail_shaker_sort.h"
 
-void cocktail_shaker_sort(SortFunctionArgs args)
+void cocktail_shaker_sort(struct SortFunctionArgs args)
 {
 #define COCKTAIL_SHAKER_SORT_SLEEP sleep_microseconds((uint64_t)(*args.speed * 1000.0f));
-    SortStats *sortStats = args.sortStats;
+    struct SortStats *sortStats = args.sortStats;
     SortValueType *values = args.values;
     size_t count = args.count;
     size_t left = 0;

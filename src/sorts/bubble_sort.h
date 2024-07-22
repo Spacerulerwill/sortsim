@@ -3,6 +3,6 @@
 
 #include "sorts.h"
 
-void bubble_sort(SortFunctionArgs args);
+void bubble_sort(struct SortFunctionArgs args);
 
 #endif // !BUBBLE_SORT_H

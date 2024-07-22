@@ -12,17 +12,15 @@
 
 typedef uint16_t SortValueType;
 
-typedef enum
-{
+enum VisualizerMode {
     Staircase,
     Pyramid,
     Spiral,
     Circle,
     NumModes,
-} VisualizerMode;
+};
 
-typedef enum
-{
+enum SortType {
     BubbleSort,
     SelectionSort,
     InsertionSort,
@@ -30,36 +28,35 @@ typedef enum
     Quicksort,
     MergeSort,
     BogoSort,
-} SortType;
+};
 
-typedef struct
-{
+struct SortStats {
     size_t swaps;
     size_t comparisons;
     size_t arrayAccesses;
     size_t arrayWrites;
-} SortStats;
+};
 
 // Set all sort stats to zero
-void sort_stats_reset(SortStats *sortStats);
+void sort_stats_reset(struct SortStats *sortStats);
 
-typedef struct
+struct Visualizer
 {
     SortValueType *values;
     size_t count;
-    SortStats sortStats;
-    VisualizerMode mode;
+    struct SortStats sortStats;
+    enum VisualizerMode mode;
     float speed;
     _Atomic bool isSorting;
     _Atomic bool cancelSort;
-    SortType selectedSort;
-} Visualizer;
+    enum SortType selectedSort;
+};
 
-void visualizer_init(Visualizer *visualizer);
-void visualizer_free(Visualizer *visualizer);
-void visualizer_resize(Visualizer *visualizer, size_t count);
-void visualizer_start_sort(Visualizer *visualizer);
-void visualizer_draw(Visualizer *visualizer);
-void visualizer_draw_gui(Visualizer *visualizer);
+void visualizer_init(struct Visualizer *visualizer);
+void visualizer_free(struct Visualizer *visualizer);
+void visualizer_resize(struct Visualizer *visualizer, size_t count);
+void visualizer_start_sort(struct Visualizer *visualizer);
+void visualizer_draw(struct Visualizer *visualizer);
+void visualizer_draw_gui(struct Visualizer *visualizer);
 
 #endif // !VISUALIZER_H

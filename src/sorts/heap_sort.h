@@ -3,6 +3,6 @@
 
 #include "sorts.h"
 
-void heap_sort(SortFunctionArgs args);
+void heap_sort(struct SortFunctionArgs args);
 
 #endif // !HEAP_SORT_H

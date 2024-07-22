@@ -8,7 +8,7 @@
 int main()
 {
     srand((unsigned int)time(NULL));
-    Visualizer visualizer;
+    struct Visualizer visualizer;
     visualizer_init(&visualizer);
     visualizer_resize(&visualizer, DEFAULT_VISUALIZER_SIZE);
     // Raylib configuration

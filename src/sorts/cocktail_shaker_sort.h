@@ -3,6 +3,6 @@
 
 #include "sorts.h"
 
-void cocktail_shaker_sort(SortFunctionArgs args);
+void cocktail_shaker_sort(struct SortFunctionArgs args);
 
 #endif // !COCKTAIL_SHAKER_SORT_H

@@ -2,9 +2,9 @@
 
 #define SELECTION_SORT_SLEEP sleep_microseconds((uint64_t)(*args.speed * 1000.0f));
 
-void selection_sort(SortFunctionArgs args)
+void selection_sort(struct SortFunctionArgs args)
 {
-    SortStats *sortStats = args.sortStats;
+    struct SortStats *sortStats = args.sortStats;
     SortValueType *values = args.values;
     size_t count = args.count;
     size_t min_idx = 0;

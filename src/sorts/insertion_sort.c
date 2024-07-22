@@ -2,9 +2,9 @@
 
 #define INSERTION_SORT_SLEEP sleep_microseconds((uint64_t)(*args.speed * 1000.0f));
 
-void insertion_sort(SortFunctionArgs args)
+void insertion_sort(struct SortFunctionArgs args)
 {
-    SortStats *sortStats = args.sortStats;
+    struct SortStats *sortStats = args.sortStats;
     SortValueType *values = args.values;
     size_t count = args.count;
     SortValueType key = 0;

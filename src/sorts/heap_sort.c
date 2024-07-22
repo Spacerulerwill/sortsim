@@ -2,7 +2,7 @@
 
 #define HEAP_SORT_SLEEP sleep_microseconds((uint64_t)(*args->speed * 50000.0f));
 
-static void heapify(SortFunctionArgs* args, SortValueType root, int n) {
+static void heapify(struct SortFunctionArgs* args, SortValueType root, int n) {
     if (atomic_load(args->cancelSort))
         return;
     int largest = root; // Initialize largest as root
@@ -27,7 +27,7 @@ static void heapify(SortFunctionArgs* args, SortValueType root, int n) {
     }
 }
 
-static void impl_heap_sort(SortFunctionArgs* args) {
+static void impl_heap_sort(struct SortFunctionArgs* args) {
     int n = args->count;
 
     // Build max heap
@@ -52,6 +52,6 @@ static void impl_heap_sort(SortFunctionArgs* args) {
     }
 }
 
-void heap_sort(SortFunctionArgs args) {
+void heap_sort(struct SortFunctionArgs args) {
     impl_heap_sort(&args);
 }

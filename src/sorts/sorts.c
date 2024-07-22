@@ -44,9 +44,9 @@ void sleep_microseconds(uint64_t microseconds)
 
 int perform_sort(void *arg)
 {
-    Visualizer *visualizer = (Visualizer *)arg;
+    struct Visualizer *visualizer = (struct Visualizer *)arg;
     sort_stats_reset(&visualizer->sortStats);
-    SortFunctionArgs sortFunctionArgs = {&visualizer->sortStats, visualizer->values, visualizer->count,
+    struct SortFunctionArgs sortFunctionArgs = {&visualizer->sortStats, visualizer->values, visualizer->count,
                                          &visualizer->cancelSort, &visualizer->speed};
     sortFunctions[visualizer->selectedSort](sortFunctionArgs);
     if (atomic_load(&visualizer->cancelSort))
@@ -63,7 +63,7 @@ int perform_sort(void *arg)
     return 0;
 }
 
-void shuffle(SortValueType *values, size_t count, SortStats *sortStats)
+void shuffle(SortValueType *values, size_t count, struct SortStats *sortStats)
 {
     if (count > 1)
     {
@@ -84,7 +84,7 @@ void shuffle(SortValueType *values, size_t count, SortStats *sortStats)
     }
 }
 
-bool is_already_sorted(SortValueType *values, size_t count, SortStats *sortStats)
+bool is_already_sorted(SortValueType *values, size_t count, struct SortStats *sortStats)
 {
     for (size_t i = 0; i < count - 1; i++)
     {
@@ -101,7 +101,7 @@ bool is_already_sorted(SortValueType *values, size_t count, SortStats *sortStats
     return true;
 }
 
-void swap(SortStats *stats, SortValueType *a, SortValueType *b)
+void swap(struct SortStats *stats, SortValueType *a, SortValueType *b)
 {
     SortValueType temp = *a;
     *a = *b;

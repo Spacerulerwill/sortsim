@@ -14,9 +14,9 @@
         return;                                                                                                        \
     }
 
-static void merge(size_t low, size_t mid, size_t high, SortFunctionArgs *args)
+static void merge(size_t low, size_t mid, size_t high, struct SortFunctionArgs *args)
 {
-    SortStats *sortStats = args->sortStats;
+    struct SortStats *sortStats = args->sortStats;
     SortValueType *values = args->values;                                                                                                                 \
     // Create temp arrays and copy data to them
     size_t leftSize = mid - low + 1;
@@ -98,7 +98,7 @@ static void merge(size_t low, size_t mid, size_t high, SortFunctionArgs *args)
 #undef CONTINUE_SORT_CHECK
 }
 
-static void merge_sort_impl(size_t low, size_t high, SortFunctionArgs *args)
+static void merge_sort_impl(size_t low, size_t high, struct SortFunctionArgs *args)
 {
     if (low >= high)
         return;
@@ -110,7 +110,7 @@ static void merge_sort_impl(size_t low, size_t high, SortFunctionArgs *args)
     merge(low, mid, high, args);
 }
 
-void merge_sort(SortFunctionArgs args)
+void merge_sort(struct SortFunctionArgs args)
 {
     if (args.count < 2)
         return;

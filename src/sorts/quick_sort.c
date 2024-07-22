@@ -2,9 +2,9 @@
 
 #define QUICK_SORT_SLEEP sleep_microseconds((uint64_t)(*args->speed * 50000.0f));
 
-static size_t quicksort_partition(size_t low, size_t high, SortFunctionArgs *args)
+static size_t quicksort_partition(size_t low, size_t high, struct SortFunctionArgs *args)
 {
-    SortStats *sortStats = args->sortStats;
+    struct SortStats *sortStats = args->sortStats;
     SortValueType *values = args->values;
 
     SortValueType pivot = values[low];
@@ -38,7 +38,7 @@ static size_t quicksort_partition(size_t low, size_t high, SortFunctionArgs *arg
     return j;
 }
 
-static void quicksort_impl(size_t low, size_t high, SortFunctionArgs *args)
+static void quicksort_impl(size_t low, size_t high, struct SortFunctionArgs *args)
 {
     if (low >= high)
         return;
@@ -52,7 +52,7 @@ static void quicksort_impl(size_t low, size_t high, SortFunctionArgs *args)
     quicksort_impl(partition_idx + 1, high, args);
 }
 
-void quick_sort(SortFunctionArgs args)
+void quick_sort(struct SortFunctionArgs args)
 {
     quicksort_impl(0, args.count - 1, &args);
 }

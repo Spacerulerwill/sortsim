@@ -3,6 +3,6 @@
 
 #include "sorts.h"
 
-void merge_sort(SortFunctionArgs args);
+void merge_sort(struct SortFunctionArgs args);
 
 #endif // !MERGE_SORT_H
