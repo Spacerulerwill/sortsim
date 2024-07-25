@@ -17,6 +17,8 @@ add_executable(${PROJECT_NAME}
     src/sorts/selection_sort.h
     src/sorts/insertion_sort.c
     src/sorts/insertion_sort.h
+    src/sorts/shell_sort.c
+    src/sorts/shell_sort.h
     src/sorts/cocktail_shaker_sort.c
     src/sorts/cocktail_shaker_sort.h
     src/sorts/merge_sort.c

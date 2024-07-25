@@ -38,6 +38,7 @@ void sleep_microseconds(uint64_t microseconds);
 void bubble_sort(struct SortFunctionArgs args);
 void selection_sort(struct SortFunctionArgs args);
 void insertion_sort(struct SortFunctionArgs args);
+void shell_sort(struct SortFunctionArgs args);
 void cocktail_shaker_sort(struct SortFunctionArgs args);
 void quick_sort(struct SortFunctionArgs args);
 void merge_sort(struct SortFunctionArgs args);

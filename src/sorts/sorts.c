@@ -2,6 +2,7 @@
 #include "bubble_sort.h"
 #include "selection_sort.h"
 #include "insertion_sort.h"
+#include "shell_sort.h"
 #include "cocktail_shaker_sort.h"
 #include "quick_sort.h"
 #include "merge_sort.h"
@@ -111,6 +112,6 @@ void swap(struct SortStats *stats, SortValueType *a, SortValueType *b)
     stats->arrayWrites += 2;
 }
 
-const SortFunction sortFunctions[] = {bubble_sort, selection_sort, insertion_sort, cocktail_shaker_sort,
+const SortFunction sortFunctions[] = {bubble_sort, selection_sort, insertion_sort, shell_sort, cocktail_shaker_sort,
                                       quick_sort,  merge_sort,     heap_sort, bogo_sort};
 const size_t totalSorts = sizeof(sortFunctions) / sizeof(SortFunction);
